@@ -1,0 +1,1 @@
+Jenkins.instance.getItemByFullName('JobName').builds.findAll { it.number > 10 && it.number < 1717 }.each { it.delete() }

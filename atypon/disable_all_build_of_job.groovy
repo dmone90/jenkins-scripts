@@ -1,0 +1,1 @@
+Jenkins.instance.getItemByFullName("Build name").getBuilds().each { bl -> bl.finish(hudson.model.Result.ABORTED, new java.io.IOException("Aborting build")) } 
