@@ -3,15 +3,15 @@
 // Given a job name find out it's github repo and gdsl file.
 // Then retrieve the content of that file using GithubAPI endpoints
 // and search for occurences of `node('cisc')` `agent 'cisc'`  
-import com.coravy.hudson.plugins.github.*
+import org.kohsuke.github.*
 
 /**
  * Find the gdsl script and the repo for <code>jobName</code>.
  * @return a hashmap with attributes:
  *    name: jobName
  *    script: 'gdsl script path'
- *    repo: 'git repository in the form <owner>/<reponame>'
- */
+ *    repo: 'git repository in the form <owner|org>/<reponame>'
+ */ 
 def get_job_info(jobName) {
     def jobInfo = [:]
 
