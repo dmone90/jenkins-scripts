@@ -1,30 +1,56 @@
 #! groovy
 
-// Given a list of jobs names find out their github repo and gdsl file.
+// Given a list of jobs or job names find out their github repo and gdsl file.
 // Then retrieve the content of that file using java GithubAPI library
 // and search for occurences of `node('cisc')` `agent 'cisc'`  
 import org.kohsuke.github.*
+import org.jenkinsci.plugins.workflow.job.*
+
+G = null
+
+try {
+    G = GitHub.connect('atyponci', AUTH_TOKEN)
+    println 'Connected!'
+} catch (java.io.IOException e) {
+    println 'Cannot establish connection to github'
+    return -5
+}
 
 /**
  * Find the gdsl script and the repo for <code>jobName</code>.
+ * @param jobName the full name of the pipeline job i.e 1910/Unittest_Gradle, id-1910/atm-it-1910
  * @return a hashmap with attributes:
  *    name: jobName
  *    script: 'gdsl script path'
  *    repo: 'git repository in the form <owner|org>/<reponame>'
  */ 
-def get_job_info(jobName) {
+def get_pipeline_job_info(String jobName) {
+    if (jobName == null) return -1
+    j = Jenkins.instance.getItemByFullName(jobName)
+    get_pipeline_job_info(j)
+}
+
+/**
+ * Find the gdsl script and the repo for <code>jobName</code>.
+ * @param job a org.jenkinsci.plugins.workflow.job.WorkflowJob instance.
+ * @return a hashmap with attributes:
+ *    name: jobName
+ *    script: 'gdsl script path'
+ *    repo: 'git repository in the form <owner|org>/<reponame>'
+ *    label: the label used by the gdsl script
+ */ 
+def get_pipeline_job_info(WorkflowJob job) {
+    if (job == null) return -1
     def jobInfo = [:]
 
-    j = Jenkins.instance.getItemByFullName(jobName)
-
     // FYI 
-    // j.getDefinition().class == ' org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition'
+    // job.getDefinition().class == ' org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition'
 
     // get the gdsl file path
-    /* String */ spath = j.getDefinition().getScriptPath()
+    /* String */ spath = job.getDefinition().getScriptPath()
     
     // get the repository that the above gdsl resides
-    /* hudson.plugins.git.GitSCM */ scm = j.getDefinition().getScm()
+    /* hudson.plugins.git.GitSCM */ scm = job.getDefinition().getScm()
 
     // get a list of repositories configured in the job
     /* List<org.eclipse.jgit.transport.RemoteConfig> */ repos = scm.getRepositories()
@@ -42,31 +68,8 @@ def get_job_info(jobName) {
         }
     }
     
-    jobInfo << [name: jobName]
-    jobInfo << [script: spath]
-    jobInfo << [repo: r]
-    return jobInfo
-}
-
-
-def jobs = []
-
-// workflowJobsNames should be passed as a parameter
-// workflowJobsNames = []
-
-for (job_Name in workflowJobsNames) {
-    jobs << get_job_info(job_Name)
-}
-
-// --------------------------------------------------------------------- //
-
-AUTH_TOKEN = '4001191b346bb11b5b0b6a5e6948fe2d292b30fc'
-G = GitHub.connect('atyponci', AUTH_TOKEN)
-println G.getRateLimit()
-
-jobs.each {
-    repo = G.getRepository(it.repo)    
-    is = repo.getFileContent(it.script).read()
+    /* GHRepository */ repo = G.getRepository(r)
+    /* InputStream */ is = repo.getFileContent(spath).read()
     dslContent = is.getText('UTF-8')
     node_pattern = /node\s*\(["'](\w*)["']\)/
     agent_pattern = /agent\s*\{\s*label\s*["'](\w*)["'] \}/
@@ -77,8 +80,19 @@ jobs.each {
     if (job_label == []) {
         job_label = dslContent.findAll(agent_pattern) { match, word -> return word }
     }
-    // add a new property to the jobInfo map
-    it.label = job_label
+
+    jobInfo << [name: jobName]
+    jobInfo << [script: spath]
+    jobInfo << [repo: r]
+    jobInfo << [label: job_label]
+    return jobInfo
 }
 
-println G.getRateLimit()
+
+// Examples:
+// def jobs = ['1910/Unittest_Gradle', '1910/All_Product_1910']
+// for (j in jobs) {
+//     jobs << get_pipeline_job_info(j)
+// }
+
+
