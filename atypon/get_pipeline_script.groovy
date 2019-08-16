@@ -42,6 +42,7 @@ def get_pipeline_job_info(String jobName) {
 def get_pipeline_job_info(WorkflowJob job) {
     if (job == null) return -1
     def jobInfo = [:]
+    jobName = job.getFullName()
 
     // FYI 
     // job.getDefinition().class == ' org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition'
@@ -94,5 +95,6 @@ def get_pipeline_job_info(WorkflowJob job) {
 // for (j in jobs) {
 //     jobs << get_pipeline_job_info(j)
 // }
+
 
 
