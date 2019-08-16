@@ -54,3 +54,28 @@ def jobs = []
 for (job_Name in workflowJobsNames) {
     jobs << get_job_info(job_Name)
 }
+
+// --------------------------------------------------------------------- //
+
+AUTH_TOKEN = '4001191b346bb11b5b0b6a5e6948fe2d292b30fc'
+G = GitHub.connect('atyponci', AUTH_TOKEN)
+println G.getRateLimit()
+
+jobs.each {
+    repo = G.getRepository(it.repo)    
+    is = repo.getFileContent(it.script).read()
+    dslContent = is.getText('UTF-8')
+    node_pattern = /node\s*\(["'](\w*)["']\)/
+    agent_pattern = /agent\s*\{\s*label\s*["'](\w*)["'] \}/
+
+    // try matching node_pattern first
+    job_label = dslContent.findAll(node_pattern) { match, word -> return word }
+    // if nothing found try the agent_pattern
+    if (job_label == []) {
+        job_label = dslContent.findAll(agent_pattern) { match, word -> return word }
+    }
+    // add a new property to the jobInfo map
+    it.label = job_label
+}
+
+println G.getRateLimit()
