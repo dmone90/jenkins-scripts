@@ -51,6 +51,9 @@ def get_job_info(jobName) {
 
 def jobs = []
 
+// workflowJobsNames should be passed as a parameter
+// workflowJobsNames = []
+
 for (job_Name in workflowJobsNames) {
     jobs << get_job_info(job_Name)
 }
