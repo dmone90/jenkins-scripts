@@ -1,7 +1,7 @@
 #! groovy
 
-// Given a job name find out it's github repo and gdsl file.
-// Then retrieve the content of that file using GithubAPI endpoints
+// Given a list of jobs names find out their github repo and gdsl file.
+// Then retrieve the content of that file using java GithubAPI library
 // and search for occurences of `node('cisc')` `agent 'cisc'`  
 import org.kohsuke.github.*
 
